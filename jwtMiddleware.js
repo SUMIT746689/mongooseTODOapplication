@@ -1,19 +1,16 @@
-const jwt = require('jsonwebtoken');
+const res = require("express/lib/response");
+const jsonwebtoken = require("jsonwebtoken");
 
 
-const jwtMiddleware =async (req,res,next) =>{
-
-   try{
-    const token = req.headers.token.split(' ')[1];
-    const decode = jwt.verify(token,process.env.SECRETE_KEY);
-    const {name,userId} = decode ;
-    req.name = name;
-    req.userId = userId;
-    next();
-   }
-   
-   catch{
-      next("authentication Error");
-   }
+const jwtMiddleware = (req,res,next)=>{
+    try{
+        const cutToken = req.headers.token.split(' ')[1];
+        const isVarify = jsonwebtoken.verify(cutToken,process.env.SECRETE_KEY)
+        next();
+    }
+    catch{
+        res.status(500).json({"Error" : "Authenticaion Error"})
+    }
 }
+
 module.exports = jwtMiddleware ;

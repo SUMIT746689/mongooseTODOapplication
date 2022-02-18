@@ -1,18 +1,17 @@
 const express = require('express');
-const routerHandle = require('./routerHandle');
-const dotenv = require('dotenv');
+const authHandler = require('./authHandler');
+const routerHandler = require('./routerHandle');
+const bcrypt = require('bcrypt');
+require('dotenv').config();
 
 const app = express();
-dotenv.config();
+const PORT = 3000 ;
+app.use(express.json());
 
-app.use(express.json()); 
-app.use('/user',routerHandle);
-app.use((err,req,res,next)=>{
-    if(res.headerSent){
-        next(err)
-    }
-    else{
-        res.status(401).json(err);
-    }
+app.use('/user',routerHandler);
+
+app.use('/auth',authHandler);
+
+app.listen(PORT,()=>{
+    console.log('Listening...')
 })
-app.listen(3000,()=>console.log("Running..."))

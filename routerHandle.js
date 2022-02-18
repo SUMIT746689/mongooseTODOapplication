@@ -1,69 +1,119 @@
 const express = require('express');
-const schemaHandle = require('./schemaHandle');
+const routerSchema = require('./routerSchema');
+const routerHandler = express.Router();
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const jwtMiddleware = require('./jwtMiddleware');
 
+const User = new mongoose.model('User',routerSchema);
 
-const routerHandle = express.Router();
-const User = mongoose.model("user",schemaHandle);
-const saltRounds = 10;
-
-
-routerHandle.get('/',jwtMiddleware,async (req,res,next)=>{
-   const data = await User.find({_id : req.userId}); 
-    res.json({data});
-})
-routerHandle.post('/signup',async(req,res,next)=>{
-    try {
-        const user = new User({
-            name : req.body.name,
-            username : req.body.username,
-            password : await bcrypt.hash(req.body.password,saltRounds)
-        });
-    await user.save();
-    res.status(200).json({"message":"create sucessfull"})
-    }
-    catch{
-        res.status(500).json({"error":"Can't create new user"})
-    }
-})
-
-routerHandle.post('/login',async(req,res,next)=>{
-    try{
-        const user =  await User.find({username :req.body.username});
-        console.log(user[0].password);
-        if(user && user.length>0){
-            const isCorrectUser = await bcrypt.compare(req.body.password,user[0].password )
-            if(isCorrectUser){
-                const token = await jwt.sign({
-                    name : user[0].name,
-                    userId : user[0].id
-                },process.env.SECRETE_KEY,{expiresIn:'1h'})
-                res.status(200).json({
-                    token ,
-                    message : "Sucessfull"
-                })
-            }
-            else{
-                res.status(403).json({"Error":"Unauthentication Error"})
-            }
+routerHandler.get('/all',jwtMiddleware,(req,res,next)=>{
+    User.find({},(err,user)=>{
+        if(err){
+            res.status('500').json({"err":"Post Error"})
         }
         else{
-            res.status(402).json({"Error":"Unauthentication Error"})
+            res.status('200').json({
+                user,
+                "message" : "Sucessfully Find"
+            })    
         }
+    });
+});
+
+routerHandler.get('/:id',(req,res,next)=>{
+    User.findOne({_id : req.params.id},(err,user)=>{
+        if(err){
+            res.status('500').json({"err":"Post Error"})
+        }
+        else{
+            res.status('200').json({
+                user,
+                "message" : "Sucessfully Find"
+            })    
+        }
+    });
+});
+
+routerHandler.post('/',(req,res,next)=>{
+    
+    const user = new User(req.body);
+    user.save((err)=>{
+        if(err){
+            res.status('500').json({"err":"Post Error"})
+        }
+        else{
+            res.status('200').json({
+                user,
+                "message" : "Sucessfully Post"
+            })    
+        }
+    }); 
+});
+routerHandler.post('/all',(req,res,next)=>{
+    
+    User.insertMany(req.body,(err,data)=>{
+        if(err){
+            res.status('500').json({"err":"Post Error"})
+        }
+        else{
+            res.status('200').json({
+                data,
+                "message" : "Sucessfully Post"
+            })    
+        }
+    }); 
+});
+routerHandler.put('/:id', (req,res,next)=>{
+    
+    User.update({_id : req.params.id},{status : "inactive"},(err,data)=>{
+        if(err){
+            res.status('500').json({"err":"Post Error"})
+        }
+        else{
+            res.status('200').json({
+                data,
+                "message" : "Sucessfully PUT"
+            })    
+        }
+    }); 
+});
+routerHandler.put('/all/:id',(req,res,next)=>{
+    
+    User.updateMany({name : req.body.id},{status : "inactive"},(err,data)=>{
+        if(err){
+            res.status('500').json({"err":"Post Error"})
+        }
+        else{
+            res.status('200').json({
+                data,
+                "message" : "Sucessfully PUT"
+            })    
+        }
+    }); 
+});
+routerHandler.delete('/:id',async (req,res,next)=>{
+    try{
+        const value = await User.deleteOne({_id : req.params.id});
+        res.status(200).json({
+            value,
+            "success" : "Sucessfully Deleted"
+        });    
     }
     catch{
-        res.status(401).json({"Error":"Unauthentication Error"})
+        res.status(500).json({Error :'error Delete'});
     }
-})
+});
+routerHandler.delete('/',async (req,res,next)=>{
+    try{
+        const value = await User.deleteMany({name : 'Shakil'});
+        res.status(200).json({
+            value,
+            "success" : "Sucessfully Deleted"
+        });    
+    }
+    catch{
+        res.status(500).json({Error :'error Delete'});
+    }
+});
 
-routerHandle.put('/',jwtMiddleware,(req,res,next)=>{
-    
-})
-routerHandle.delete('/',(req,res,next)=>{
-    
-})
-
-module.exports = routerHandle ;
+module.exports = routerHandler ;

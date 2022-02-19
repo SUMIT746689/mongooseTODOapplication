@@ -12,7 +12,13 @@ const authScheama = mongoose.Schema({
     password : {
         type : String,
         required : true
-    }
+    },
+    todos: [
+        {
+            type: mongoose.Types.ObjectId,
+            ref : 'Todo' 
+        }
+    ]
 })
 
 module.exports = authScheama ;

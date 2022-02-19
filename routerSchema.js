@@ -22,7 +22,11 @@ const routerSchema = new mongoose.Schema({
     date : {
         type : Date,
         default : Date.now
-    }
+    },
+    tokens : {
+        type : mongoose.Types.ObjectId,
+        ref : 'Auth'
+    } 
 })
 
 module.exports = routerSchema ;

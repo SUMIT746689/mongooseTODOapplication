@@ -6,10 +6,12 @@ const jwtMiddleware = (req,res,next)=>{
     try{
         const cutToken = req.headers.token.split(' ')[1];
         const isVarify = jsonwebtoken.verify(cutToken,process.env.SECRETE_KEY)
+        req.name = isVarify.name ;
+        req.userId = isVarify.id ;
         next();
     }
-    catch{
-        res.status(500).json({"Error" : "Authenticaion Error"})
+    catch(err){
+        res.status(500).send(err)
     }
 }
 

@@ -3,51 +3,63 @@ const routerSchema = require('./routerSchema');
 const routerHandler = express.Router();
 const mongoose = require('mongoose');
 const jwtMiddleware = require('./jwtMiddleware');
+const authScheama = require('./authSchema');
+const todoScheama = require('./todoSchema');
 
-const User = new mongoose.model('User',routerSchema);
+const Auth = new mongoose.model('Auth',authScheama);
+const Todo = new mongoose.model('Todo',todoScheama)
 
-routerHandler.get('/all',jwtMiddleware,(req,res,next)=>{
-    User.find({},(err,user)=>{
-        if(err){
-            res.status('500').json({"err":"Post Error"})
-        }
-        else{
-            res.status('200').json({
-                user,
-                "message" : "Sucessfully Find"
-            })    
-        }
-    });
-});
-
-routerHandler.get('/:id',(req,res,next)=>{
-    User.findOne({_id : req.params.id},(err,user)=>{
-        if(err){
-            res.status('500').json({"err":"Post Error"})
-        }
-        else{
-            res.status('200').json({
-                user,
-                "message" : "Sucessfully Find"
-            })    
-        }
-    });
-});
-
-routerHandler.post('/',(req,res,next)=>{
+routerHandler.get('/all',jwtMiddleware,async (req,res,next)=>{
+    try{
+        const todo = await Todo.find()
+            .populate('user')
+                    
+        res.status('200').json({
+            ...todo,
+            "message" : "Sucessfully Find"
+        })    
     
-    const user = new User(req.body);
-    user.save((err)=>{
-        if(err){
+    }
+    catch{
             res.status('500').json({"err":"Post Error"})
-        }
-        else{
-            res.status('200').json({
-                user,
-                "message" : "Sucessfully Post"
-            })    
-        }
-    }); 
+     }
+});
+
+routerHandler.get('/:id',jwtMiddleware,async (req,res,next)=>{
+    try{
+        const userData = await User.findOne({_id : req.params.id})
+        .populate('tokens')
+        
+            
+        res.status('200').json({
+                userData,
+                "message" : "Sucessfully Find"
+        })
+    
+    }
+    catch {
+        res.status('500').json({"err":"Post Error"})
+    }
+   
+});
+
+routerHandler.post('/',jwtMiddleware,async (req,res,next)=>{
+    try{
+        const todo = await new Todo({
+            ...req.body,
+            auth : req.userId
+        });
+        todo.save();
+        const auth = await Auth.updateOne({_id : req.userId},{
+            $push : {todos : todo._id}
+        })
+        res.status(200).json(todo);
+    }
+    catch{
+        res.status(500).json({"error":"Authentication Failed"});
+    }
+    
+    
 });
 routerHandler.post('/all',(req,res,next)=>{
     
